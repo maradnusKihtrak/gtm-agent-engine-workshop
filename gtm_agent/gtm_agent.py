@@ -58,7 +58,8 @@ def build_prospect_profile(prospect_id: str) -> dict:
         return {"prospect_profile": None, "found": False}
     built = {
         "prospect_id": prospect_id,
-        **rec,
+        **data_service.public_prospect_fields(rec),
+        "billing_qualified": bool(rec.get("billing_qualification")),
         "engagement_history": data_service.fetch_engagement_history(prospect_id),
         "account_details": data_service.fetch_account_details(prospect_id),
         "tech_stack": data_service.fetch_tech_stack(prospect_id),
@@ -129,11 +130,13 @@ def get_prospect(prospect_id: str) -> dict:
     if record is None:
         return {"prospect": None, "found": False}
     # Carry the contact fields through, dropping the bulky enrichment blobs the
-    # caller can pull from build_prospect_profile instead.
+    # caller can pull from build_prospect_profile instead, and stripping the
+    # sensitive billing identifiers no caller needs.
     contact = {
         "prospect_id": prospect_id,
-        **{k: v for k, v in record.items()
-           if k not in ("engagement_history", "account_details", "tech_stack")},
+        **data_service.public_prospect_fields(
+            record, drop=("engagement_history", "account_details", "tech_stack")
+        ),
     }
     return {"prospect": contact, "found": True}
 
