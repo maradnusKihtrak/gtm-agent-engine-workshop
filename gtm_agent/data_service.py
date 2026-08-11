@@ -16,8 +16,11 @@ __all__ = [
     "get_offering", "get_prospect_record", "update_prospect_info",
     "fetch_engagement_history", "fetch_account_details", "fetch_tech_stack",
     "get_profile_from_db", "save_profile_to_db",
-    "get_rep",
+    "get_rep", "public_prospect_fields", "SENSITIVE_PROSPECT_KEYS",
 ]
+
+# Prospect record keys that must never reach model context.
+SENSITIVE_PROSPECT_KEYS = frozenset({"billing_qualification"})
 
 # Built prospect profiles are cached in memory (keyed by prospect_id) so repeat
 # lookups within a run are served without rebuilding.
@@ -34,6 +37,14 @@ def get_offering(offering_id):
 def get_prospect_record(prospect_id):
     "Return the source prospect record for prospect_id, or None if not found."
     return PROSPECTS.get(prospect_id)
+
+
+def public_prospect_fields(record, drop=()):
+    "Return a copy of a prospect record with sensitive (and any extra) keys removed."
+    if not record:
+        return record
+    excluded = SENSITIVE_PROSPECT_KEYS | set(drop)
+    return {k: v for k, v in record.items() if k not in excluded}
 
 
 def get_rep(rep):
